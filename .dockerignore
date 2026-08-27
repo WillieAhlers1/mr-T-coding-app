@@ -1,0 +1,6 @@
+*
+!index.html
+!styles.css
+!src/
+!src/**
+!nginx.conf

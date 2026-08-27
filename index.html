@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A friendly block-coding puzzle game for young learners.">
+    <title>Turtle Quest</title>
+    <script>
+      (() => {
+        const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+        const theme =
+          param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Turtle Quest home">
+        <span class="brand-mark" aria-hidden="true">TQ</span>
+        <span>TURTLE QUEST</span>
+      </a>
+      <button id="sound-toggle" class="icon-button" type="button" aria-pressed="false" title="Turn sound off">
+        <span aria-hidden="true">SFX</span>
+        <span id="sound-label">ON</span>
+      </button>
+    </header>
+
+    <main>
+      <section class="mission-bar" aria-live="polite">
+        <div>
+          <span id="level-number" class="eyebrow">LEVEL 1</span>
+          <h1 id="level-name">First Steps</h1>
+        </div>
+        <p id="level-hint">Three steps to the crystal!</p>
+        <div class="crystal-score" aria-label="Crystals collected">
+          <span class="crystal-mini" aria-hidden="true"></span>
+          <strong id="crystal-count">0 / 1</strong>
+        </div>
+      </section>
+
+      <div class="game-layout">
+        <section class="world-panel" aria-label="Puzzle world">
+          <div id="board-frame" class="board-frame">
+            <canvas id="game-board" width="320" height="320" aria-label="Block world game board"></canvas>
+            <div id="board-message" class="board-message" role="status">BUILD YOUR CODE!</div>
+          </div>
+        </section>
+
+        <section class="code-panel" aria-labelledby="code-title">
+          <div class="code-heading">
+            <div>
+              <span class="eyebrow">YOUR PROGRAM</span>
+              <h2 id="code-title">Code blocks</h2>
+            </div>
+            <span id="command-budget" class="budget">0 / 3</span>
+          </div>
+
+          <div class="command-palette" aria-label="Commands">
+            <button class="command-button move" type="button" data-command="forward">
+              <span>MOVE</span>
+            </button>
+            <button class="command-button turn" type="button" data-command="left">
+              <span>LEFT</span>
+            </button>
+            <button class="command-button turn" type="button" data-command="right">
+              <span>RIGHT</span>
+            </button>
+          </div>
+
+          <ol id="program-list" class="program-list" aria-label="Program steps"></ol>
+
+          <div class="program-actions">
+            <button id="undo-button" class="secondary-button" type="button" title="Undo last block" disabled>
+              <span aria-hidden="true">&#8617;</span>
+              <span>UNDO</span>
+            </button>
+            <button id="clear-button" class="secondary-button" type="button" disabled>CLEAR</button>
+            <button id="run-button" class="run-button" type="button">
+              <span aria-hidden="true">&#9654;</span>
+              <span>RUN</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <nav class="level-nav" aria-label="Levels">
+        <span class="eyebrow">QUEST MAP</span>
+        <div id="level-buttons" class="level-buttons"></div>
+      </nav>
+    </main>
+
+    <dialog id="win-dialog" class="win-dialog">
+      <div class="win-crystal" aria-hidden="true"></div>
+      <span class="eyebrow">QUEST COMPLETE</span>
+      <h2 id="win-title">Crystal found!</h2>
+      <p id="win-message">Your code worked.</p>
+      <button id="next-button" class="run-button" type="button">NEXT LEVEL <span aria-hidden="true">&rarr;</span></button>
+    </dialog>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

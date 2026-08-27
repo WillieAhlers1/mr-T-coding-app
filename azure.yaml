@@ -1,0 +1,16 @@
+name: mr-minecrafts-coding-app
+metadata:
+  template: mr-minecrafts-coding-app@0.1.0
+infra:
+  provider: bicep
+  path: infra
+services:
+  web:
+    project: .
+    dist: dist
+    language: js
+    host: staticwebapp
+hooks:
+  predeploy:
+    shell: sh
+    run: npm run build

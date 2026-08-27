@@ -1,0 +1,4 @@
+.azure/
+dist/
+node_modules/
+turtle-quest*.png
