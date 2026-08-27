@@ -12,5 +12,9 @@ services:
     host: staticwebapp
 hooks:
   predeploy:
-    shell: sh
-    run: npm run build
+    windows:
+      shell: pwsh
+      run: npm run build
+    posix:
+      shell: sh
+      run: npm run build
