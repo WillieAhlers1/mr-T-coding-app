@@ -38,6 +38,7 @@
   --cp-ink: #17271c;
   --cp-move: #2778b8;
   --cp-turn: #d17631;
+  --cp-repeat: #8a3fa0;
   --cp-grid: rgba(23, 39, 28, 0.12);
   --cp-pattern: rgba(36, 36, 36, 0.035);
 }
@@ -81,12 +82,17 @@ html[data-theme="dark"] {
   --cp-ink: #132017;
   --cp-move: #3d8ac5;
   --cp-turn: #c97636;
+  --cp-repeat: #ad65bf;
   --cp-grid: rgba(222, 222, 222, 0.12);
   --cp-pattern: rgba(222, 222, 222, 0.035);
 }
 
 * {
   box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 html {
@@ -349,6 +355,12 @@ h2 {
   background: var(--cp-turn);
 }
 
+.command-button.repeat {
+  min-height: 62px;
+  grid-column: 1 / -1;
+  background: var(--cp-repeat);
+}
+
 .program-list {
   display: flex;
   min-height: 154px;
@@ -391,6 +403,11 @@ h2 {
 
 .program-step.turn {
   background: var(--cp-turn);
+}
+
+.program-step.repeat {
+  width: 94px;
+  background: var(--cp-repeat);
 }
 
 .program-step.active {

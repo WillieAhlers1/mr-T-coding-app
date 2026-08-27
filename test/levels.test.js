@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { runProgram } from "../src/game.js";
+import { countProgramBlocks, runProgram } from "../src/game.js";
 import { LEVELS } from "../src/levels.js";
 
 test("every level solution collects every crystal within its command limit", async (context) => {
@@ -10,7 +10,7 @@ test("every level solution collects every crystal within its command limit", asy
 
       assert.equal(result.status, "complete");
       assert.equal(result.collected.length, level.crystals.length);
-      assert.ok(level.solution.length <= level.maxCommands);
+      assert.ok(countProgramBlocks(level.solution) <= level.maxCommands);
     });
   }
 });

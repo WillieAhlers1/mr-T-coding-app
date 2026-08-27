@@ -1,4 +1,12 @@
-import { COMMANDS, createGameState, runCommand } from "./game.js";
+import {
+  COMMANDS,
+  PROGRAM_TYPES,
+  countProgramBlocks,
+  createGameState,
+  createProgramSteps,
+  createRepeat,
+  runCommand,
+} from "./game.js";
 import { LEVELS } from "./levels.js";
 import { SoundEffects } from "./audio.js";
 
@@ -19,6 +27,7 @@ const elements = {
   crystalCount: document.querySelector("#crystal-count"),
   budget: document.querySelector("#command-budget"),
   programList: document.querySelector("#program-list"),
+  repeatMoveButton: document.querySelector("#repeat-move-button"),
   runButton: document.querySelector("#run-button"),
   undoButton: document.querySelector("#undo-button"),
   clearButton: document.querySelector("#clear-button"),
@@ -137,25 +146,33 @@ function drawBoard() {
 }
 
 function renderProgram(activeIndex = -1) {
-  elements.programList.replaceChildren(...program.map((command, index) => {
+  elements.programList.replaceChildren(...program.map((block, index) => {
+    const isRepeat = block?.type === PROGRAM_TYPES.REPEAT;
     const item = document.createElement("li");
-    item.className = `program-step${command === COMMANDS.FORWARD ? "" : " turn"}${index === activeIndex ? " active" : ""}`;
-    item.textContent = COMMAND_SYMBOLS[command];
-    item.setAttribute("aria-label", `Step ${index + 1}: ${command}`);
+    const kind = isRepeat ? " repeat" : block === COMMANDS.FORWARD ? "" : " turn";
+    item.className = `program-step${kind}${index === activeIndex ? " active" : ""}`;
+    item.textContent = isRepeat ? `${block.count}x GO` : COMMAND_SYMBOLS[block];
+    item.setAttribute(
+      "aria-label",
+      isRepeat ? `Block ${index + 1}: repeat move ${block.count} times` : `Block ${index + 1}: ${block}`,
+    );
     return item;
   }));
 }
 
 function renderControls() {
   const level = LEVELS[currentLevelIndex];
-  const atLimit = program.length >= level.maxCommands;
-  elements.budget.textContent = `${program.length} / ${level.maxCommands}`;
+  const blockCount = countProgramBlocks(program);
+  const atLimit = blockCount >= level.maxCommands;
+  elements.budget.textContent = `${blockCount} / ${level.maxCommands}`;
   elements.undoButton.disabled = running || program.length === 0;
   elements.clearButton.disabled = running || program.length === 0;
   elements.runButton.disabled = running || program.length === 0;
   document.querySelectorAll("[data-command]").forEach((button) => {
     button.disabled = running || atLimit;
   });
+  elements.repeatMoveButton.hidden = !level.repeatMoveCount;
+  elements.repeatMoveButton.disabled = running || blockCount + 2 > level.maxCommands;
 }
 
 function renderLevelButtons() {
@@ -194,12 +211,22 @@ function loadLevel(index) {
 }
 
 function addCommand(command) {
-  if (running || program.length >= LEVELS[currentLevelIndex].maxCommands) return;
+  if (running || countProgramBlocks(program) >= LEVELS[currentLevelIndex].maxCommands) return;
   program.push(command);
   sounds.turn();
   elements.boardMessage.textContent = program.length === LEVELS[currentLevelIndex].maxCommands
     ? "CODE FULL - PRESS RUN!"
     : "KEEP BUILDING!";
+  renderProgram();
+  renderControls();
+}
+
+function addRepeatMove() {
+  const level = LEVELS[currentLevelIndex];
+  if (running || !level.repeatMoveCount || countProgramBlocks(program) + 2 > level.maxCommands) return;
+  program.push(createRepeat(level.repeatMoveCount, [COMMANDS.FORWARD]));
+  sounds.turn();
+  elements.boardMessage.textContent = "LOOP READY - PRESS RUN!";
   renderProgram();
   renderControls();
 }
@@ -216,10 +243,11 @@ async function runProgram() {
   renderControls();
   drawBoard();
 
-  for (let index = 0; index < program.length; index += 1) {
-    const command = program[index];
+  const steps = createProgramSteps(program);
+  for (let index = 0; index < steps.length; index += 1) {
+    const { command, sourcePath } = steps[index];
     const crystalsBefore = state.collected.length;
-    renderProgram(index);
+    renderProgram(sourcePath[0]);
     await sleep(STEP_DELAY);
     state = runCommand(LEVELS[currentLevelIndex], state, command);
     drawBoard();
@@ -268,6 +296,7 @@ function completeLevel() {
 document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", () => addCommand(button.dataset.command));
 });
+elements.repeatMoveButton.addEventListener("click", addRepeatMove);
 
 elements.undoButton.addEventListener("click", () => {
   program.pop();

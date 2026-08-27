@@ -1,4 +1,4 @@
-import { COMMANDS } from "./game.js";
+import { COMMANDS, createRepeat } from "./game.js";
 
 const { FORWARD: F, LEFT: L, RIGHT: R } = COMMANDS;
 
@@ -24,6 +24,18 @@ export const LEVELS = [
     crystals: ["1,1"],
     maxCommands: 3,
     solution: [F, F, F],
+  },
+  {
+    name: "Power of Repeat",
+    hint: "Use one repeat block to move four times!",
+    width: 5,
+    height: 5,
+    start: { x: 0, y: 2, direction: "east" },
+    rocks: ["1,0", "3,0", "1,4", "4,3"],
+    crystals: ["4,2"],
+    maxCommands: 2,
+    repeatMoveCount: 4,
+    solution: [createRepeat(4, [F])],
   },
   {
     name: "Corner Turn",
