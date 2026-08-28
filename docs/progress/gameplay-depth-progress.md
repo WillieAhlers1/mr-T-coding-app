@@ -1,7 +1,7 @@
 ---
 title: Turtle Quest Gameplay Depth Progress
 description: Cross-session implementation ledger for the gameplay depth roadmap
-ms.date: 2026-08-27
+ms.date: 2026-08-28
 ms.topic: reference
 ---
 
@@ -11,15 +11,15 @@ Plan: `docs/plans/2026-08-27-001-feat-gameplay-depth-plan.md`
 
 Branch: `feat/gameplay-depth-roadmap`
 
-Next action: Begin Unit 2 with engine tests that distinguish board edges, walls, and pits,
-then add one mechanic at a time to level data and canvas rendering.
+Next action: Begin Unit 3 by exposing richer movement, turn, collision, collection, and
+victory events from the deterministic execution trace.
 
 ## Current Status
 
 | Unit | Status | Verification | Commit |
 |------|--------|--------------|--------|
 | 1. Structured Programs and REPEAT | Complete | 18 subtests and browser flow passed | `306ed9c` |
-| 2. Obstacles and IF Conditions | Not started | Pending | Pending |
+| 2. Obstacles and IF Conditions | Complete | 20 tests, build, and browser flows passed | `89baaf6` |
 | 3. Animation, Sound, and Feedback | Not started | Pending | Pending |
 | 4. Levels, Stars, and Quest Map | Not started | Pending | Pending |
 | 5. Rewards and Local Progress | Not started | Pending | Pending |
@@ -27,6 +27,16 @@ then add one mechanic at a time to level data and canvas rendering.
 | 7. Local Level Editor | Not started | Pending | Pending |
 
 ## Session Log
+
+### 2026-08-28
+
+* Added distinct edge, wall, locked-door, immovable-block, and pit movement outcomes
+* Added immutable key inventory, opened-door state, and pushable positions
+* Added `IF PATH` and `IF KEY` blocks with state-aware deterministic execution traces
+* Added five playable lessons for pits, keys and doors, pushables, and conditions
+* Added canvas art, sounds, and explanatory feedback for every new mechanic
+* Verified all 20 tests, the production build, Pit Stop, and Check the Path browser flows
+* Confirmed nonblank canvas output and no overflow at tablet sizes or 390-pixel phone width
 
 ### 2026-08-27
 

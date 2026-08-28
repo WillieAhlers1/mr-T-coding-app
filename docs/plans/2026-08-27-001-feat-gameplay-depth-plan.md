@@ -174,7 +174,7 @@ Verification:
 
 ### Unit 2: Obstacles and IF Conditions
 
-* [ ] Add progressive puzzle objects and condition-aware execution
+* [x] Add progressive puzzle objects and condition-aware execution
 
 Goal: Add walls, pits, keys, doors, and pushable blocks, then introduce IF with predicates
 that directly support those mechanics.
