@@ -43,6 +43,15 @@ export class SoundEffects {
     this.tone(90, 0.18, 0, "sawtooth", 0.04);
   }
 
+  key() {
+    this.tone(520, 0.09);
+    this.tone(780, 0.14, 0.08);
+  }
+
+  fall() {
+    [180, 140, 100].forEach((frequency, index) => this.tone(frequency, 0.14, index * 0.08, "sawtooth", 0.035));
+  }
+
   win() {
     [330, 440, 554, 660].forEach((frequency, index) => this.tone(frequency, 0.18, index * 0.09));
   }

@@ -1,11 +1,12 @@
 import {
   COMMANDS,
+  PREDICATES,
   PROGRAM_TYPES,
   countProgramBlocks,
+  createExecutionTrace,
   createGameState,
-  createProgramSteps,
+  createIf,
   createRepeat,
-  runCommand,
 } from "./game.js";
 import { LEVELS } from "./levels.js";
 import { SoundEffects } from "./audio.js";
@@ -28,6 +29,8 @@ const elements = {
   budget: document.querySelector("#command-budget"),
   programList: document.querySelector("#program-list"),
   repeatMoveButton: document.querySelector("#repeat-move-button"),
+  ifPathButton: document.querySelector("#if-path-button"),
+  ifKeyButton: document.querySelector("#if-key-button"),
   runButton: document.querySelector("#run-button"),
   undoButton: document.querySelector("#undo-button"),
   clearButton: document.querySelector("#clear-button"),
@@ -100,6 +103,52 @@ function drawCrystal(x, y, size) {
   context.fillRect(x + size * 0.39, y + size * 0.35, size * 0.08, size * 0.22);
 }
 
+function drawPit(x, y, size) {
+  context.fillStyle = color("--cp-pit");
+  context.fillRect(x + size * 0.13, y + size * 0.2, size * 0.74, size * 0.62);
+  context.fillStyle = color("--cp-pit-edge");
+  context.fillRect(x + size * 0.2, y + size * 0.18, size * 0.6, size * 0.12);
+  context.fillStyle = color("--cp-ink");
+  context.fillRect(x + size * 0.3, y + size * 0.42, size * 0.4, size * 0.3);
+}
+
+function drawKey(x, y, size) {
+  context.strokeStyle = color("--cp-key");
+  context.lineWidth = Math.max(5, size * 0.1);
+  context.beginPath();
+  context.arc(x + size * 0.34, y + size * 0.38, size * 0.16, 0, Math.PI * 2);
+  context.moveTo(x + size * 0.46, y + size * 0.5);
+  context.lineTo(x + size * 0.75, y + size * 0.76);
+  context.moveTo(x + size * 0.63, y + size * 0.64);
+  context.lineTo(x + size * 0.72, y + size * 0.55);
+  context.stroke();
+}
+
+function drawDoor(x, y, size) {
+  context.fillStyle = color("--cp-door");
+  context.fillRect(x + size * 0.18, y + size * 0.08, size * 0.64, size * 0.84);
+  context.strokeStyle = color("--cp-ink");
+  context.lineWidth = 3;
+  context.strokeRect(x + size * 0.18, y + size * 0.08, size * 0.64, size * 0.84);
+  context.fillStyle = color("--cp-key");
+  context.fillRect(x + size * 0.62, y + size * 0.5, size * 0.09, size * 0.09);
+}
+
+function drawPushable(x, y, size) {
+  const pad = size * 0.14;
+  context.fillStyle = color("--cp-block");
+  context.fillRect(x + pad, y + pad, size - pad * 2, size - pad * 2);
+  context.strokeStyle = color("--cp-ink");
+  context.lineWidth = 3;
+  context.strokeRect(x + pad, y + pad, size - pad * 2, size - pad * 2);
+  context.beginPath();
+  context.moveTo(x + pad, y + pad);
+  context.lineTo(x + size - pad, y + size - pad);
+  context.moveTo(x + size - pad, y + pad);
+  context.lineTo(x + pad, y + size - pad);
+  context.stroke();
+}
+
 function drawTurtle(x, y, size, direction) {
   context.save();
   context.translate(x + size / 2, y + size / 2);
@@ -134,9 +183,25 @@ function drawBoard() {
     }
   }
 
+  (level.pits ?? []).forEach((cell) => {
+    const [x, y] = cell.split(",").map(Number);
+    drawPit(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
+  });
   level.rocks.forEach((cell) => {
     const [x, y] = cell.split(",").map(Number);
     drawRock(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
+  });
+  (level.keys ?? []).filter((cell) => !state.collectedKeys.includes(cell)).forEach((cell) => {
+    const [x, y] = cell.split(",").map(Number);
+    drawKey(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
+  });
+  (level.doors ?? []).filter((cell) => !state.openedDoors.includes(cell)).forEach((cell) => {
+    const [x, y] = cell.split(",").map(Number);
+    drawDoor(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
+  });
+  state.pushables.forEach((cell) => {
+    const [x, y] = cell.split(",").map(Number);
+    drawPushable(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
   });
   level.crystals.filter((cell) => !state.collected.includes(cell)).forEach((cell) => {
     const [x, y] = cell.split(",").map(Number);
@@ -148,13 +213,22 @@ function drawBoard() {
 function renderProgram(activeIndex = -1) {
   elements.programList.replaceChildren(...program.map((block, index) => {
     const isRepeat = block?.type === PROGRAM_TYPES.REPEAT;
+    const isIf = block?.type === PROGRAM_TYPES.IF;
     const item = document.createElement("li");
-    const kind = isRepeat ? " repeat" : block === COMMANDS.FORWARD ? "" : " turn";
+    const kind = isRepeat ? " repeat" : isIf ? " condition" : block === COMMANDS.FORWARD ? "" : " turn";
     item.className = `program-step${kind}${index === activeIndex ? " active" : ""}`;
-    item.textContent = isRepeat ? `${block.count}x GO` : COMMAND_SYMBOLS[block];
+    item.textContent = isRepeat
+      ? `${block.count}x GO`
+      : isIf
+        ? block.predicate === PREDICATES.HAS_KEY ? "IF KEY: GO" : "IF PATH: GO"
+        : COMMAND_SYMBOLS[block];
     item.setAttribute(
       "aria-label",
-      isRepeat ? `Block ${index + 1}: repeat move ${block.count} times` : `Block ${index + 1}: ${block}`,
+      isRepeat
+        ? `Block ${index + 1}: repeat move ${block.count} times`
+        : isIf
+          ? `Block ${index + 1}: ${item.textContent.toLowerCase()}`
+          : `Block ${index + 1}: ${block}`,
     );
     return item;
   }));
@@ -173,6 +247,10 @@ function renderControls() {
   });
   elements.repeatMoveButton.hidden = !level.repeatMoveCount;
   elements.repeatMoveButton.disabled = running || blockCount + 2 > level.maxCommands;
+  elements.ifPathButton.hidden = !level.ifPathMove;
+  elements.ifKeyButton.hidden = !level.ifHasKeyMove;
+  elements.ifPathButton.disabled = running || blockCount + 2 > level.maxCommands;
+  elements.ifKeyButton.disabled = running || blockCount + 2 > level.maxCommands;
 }
 
 function renderLevelButtons() {
@@ -231,6 +309,16 @@ function addRepeatMove() {
   renderControls();
 }
 
+function addConditionalMove(predicate) {
+  const level = LEVELS[currentLevelIndex];
+  if (running || countProgramBlocks(program) + 2 > level.maxCommands) return;
+  program.push(createIf(predicate, [COMMANDS.FORWARD]));
+  sounds.turn();
+  elements.boardMessage.textContent = "IF CHECK READY!";
+  renderProgram();
+  renderControls();
+}
+
 function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -243,29 +331,53 @@ async function runProgram() {
   renderControls();
   drawBoard();
 
-  const steps = createProgramSteps(program);
+  const { steps } = createExecutionTrace(LEVELS[currentLevelIndex], program);
   for (let index = 0; index < steps.length; index += 1) {
-    const { command, sourcePath } = steps[index];
+    const { command, predicate, passed, sourcePath } = steps[index];
     const crystalsBefore = state.collected.length;
+    const keysBefore = state.collectedKeys.length;
+    const doorsBefore = state.openedDoors.length;
+    const pushablesBefore = state.pushables.join("|");
     renderProgram(sourcePath[0]);
     await sleep(STEP_DELAY);
-    state = runCommand(LEVELS[currentLevelIndex], state, command);
+    state = steps[index].state;
     drawBoard();
     elements.crystalCount.textContent = `${state.collected.length} / ${LEVELS[currentLevelIndex].crystals.length}`;
 
-    if (state.status === "blocked") {
+    if (predicate) {
+      sounds.turn();
+      elements.boardMessage.textContent = passed ? "IF SAYS YES - GO!" : "IF SAYS NO - SKIP!";
+    } else if (state.status === "failed") {
+      sounds.fall();
+      elements.boardMessage.textContent = "OOPS, A PIT! CHANGE YOUR CODE.";
+    } else if (state.status === "blocked") {
       sounds.bump();
-      elements.boardMessage.textContent = "BONK! TRY A TURN.";
+      const blockedMessages = {
+        edge: "THAT'S THE EDGE - TRY A TURN.",
+        wall: "A WALL BLOCKS THE WAY.",
+        "locked-door": "THE DOOR NEEDS A KEY.",
+        "immovable-block": "THAT BLOCK CAN'T MOVE THERE.",
+      };
+      elements.boardMessage.textContent = blockedMessages[state.reason] ?? "BONK! TRY A TURN.";
+    } else if (state.collectedKeys.length > keysBefore) {
+      sounds.key();
+      elements.boardMessage.textContent = "KEY FOUND! DOOR READY.";
+    } else if (state.openedDoors.length > doorsBefore) {
+      sounds.key();
+      elements.boardMessage.textContent = "DOOR OPEN!";
     } else if (state.collected.length > crystalsBefore) {
       sounds.crystal();
       elements.boardMessage.textContent = "CRYSTAL FOUND!";
+    } else if (state.pushables.join("|") !== pushablesBefore) {
+      sounds.bump();
+      elements.boardMessage.textContent = "BLOCK PUSHED!";
     } else if (command === COMMANDS.FORWARD) {
       sounds.step();
     } else {
       sounds.turn();
     }
 
-    if (state.status === "complete") break;
+    if (["blocked", "complete", "failed"].includes(state.status)) break;
   }
 
   running = false;
@@ -297,6 +409,8 @@ document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", () => addCommand(button.dataset.command));
 });
 elements.repeatMoveButton.addEventListener("click", addRepeatMove);
+elements.ifPathButton.addEventListener("click", () => addConditionalMove(PREDICATES.PATH_AHEAD));
+elements.ifKeyButton.addEventListener("click", () => addConditionalMove(PREDICATES.HAS_KEY));
 
 elements.undoButton.addEventListener("click", () => {
   program.pop();
